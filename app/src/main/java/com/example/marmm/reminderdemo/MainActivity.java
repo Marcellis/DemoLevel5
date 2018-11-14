@@ -15,17 +15,23 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements ReminderAdapter.ReminderClickListener{
 
 
     //Local variables
 
-
+    private TextView mQuoteTextView;
 
 //Constants used when calling the update activity
 
@@ -62,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements ReminderAdapter.R
         db = AppDatabase.getInstance(this);
 
         mRecyclerView = findViewById(R.id.recyclerView);
+        mQuoteTextView= findViewById(R.id.quote_message);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
 
@@ -123,7 +130,7 @@ and uses callbacks to signal when a user is performing these actions.
 
         itemTouchHelper.attachToRecyclerView(mRecyclerView);
 
-
+        requestData();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -162,6 +169,11 @@ and uses callbacks to signal when a user is performing these actions.
             }
         });
     }
+
+    public void setQuoteTextView(String quoteMessage) {
+        mQuoteTextView.setText(quoteMessage);
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -310,5 +322,28 @@ and uses callbacks to signal when a user is performing these actions.
         }
 
     }
+
+    private void requestData()
+    {
+        NumbersApiService service = NumbersApiService.retrofit.create(NumbersApiService.class);
+        Calendar calendar = Calendar.getInstance();
+        int month = calendar.get(Calendar.MONTH);
+        int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+        /**
+         * Make an a-synchronous call by enqueing and definition of callbacks.
+         */
+        Call<DayQuoteItem> call = service.getTodaysQuote(month, dayOfMonth);
+        call.enqueue(new Callback<DayQuoteItem>() {
+            @Override
+            public void onResponse(Call<DayQuoteItem> call, Response<DayQuoteItem> response) {
+                DayQuoteItem dayQuoteItem = response.body();
+                setQuoteTextView(dayQuoteItem.getText());
+            }
+            @Override
+            public void onFailure(Call<DayQuoteItem> call, Throwable t) {
+            }
+        });
+    }
+
 
 }
